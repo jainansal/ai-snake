@@ -28,9 +28,10 @@ RED = (200,0,0)
 BLUE1 = (0, 0, 255)
 BLUE2 = (0, 100, 255)
 BLACK = (0,0,0)
+GREEN = (124,252,0)
 
 BLOCK_SIZE = 20
-SPEED = 20
+SPEED = 200
 
 class SnakeGameAI:
     
@@ -49,12 +50,13 @@ class SnakeGameAI:
         
         self.head = Point(self.w/2, self.h/2)
         self.snake = [self.head, 
-                      Point(self.head.x-BLOCK_SIZE, self.head.y),
-                      Point(self.head.x-(2*BLOCK_SIZE), self.head.y)]
+                      Point(self.head.x-BLOCK_SIZE, self.head.y)]
         
         self.score = 0
         self.food = None
+        self.obstacle = None
         self._place_food()
+        self._place_obstacle()
         self.frame_iteration=0
 
     def _place_food(self):
@@ -63,6 +65,13 @@ class SnakeGameAI:
         self.food=Point(x,y)
         if self.food in self.snake:
             self._place_food()
+
+    def _place_obstacle(self):
+        x = random.randint(0, (self.w-BLOCK_SIZE )//BLOCK_SIZE )*BLOCK_SIZE 
+        y = random.randint(0, (self.h-BLOCK_SIZE )//BLOCK_SIZE )*BLOCK_SIZE
+        self.obstacle=Point(x,y)
+        if self.obstacle in self.snake or self.obstacle == self.food:
+            self._place_obstacle()
         
     def play_step(self, action):
         # 1. collect user input
@@ -95,6 +104,7 @@ class SnakeGameAI:
             reward=10
             self.frame_iteration=0
             self._place_food()
+            self._place_obstacle()
         else:
             self.frame_iteration += 1
             self.snake.pop()
@@ -114,6 +124,8 @@ class SnakeGameAI:
         # hits itself
         if pt in self.snake[1:]:
             return True
+        if pt == self.obstacle:
+            return True
         
         return False
         
@@ -122,9 +134,10 @@ class SnakeGameAI:
         
         for pt in self.snake:
             pygame.draw.rect(self.display, BLUE1, pygame.Rect(pt.x, pt.y, BLOCK_SIZE, BLOCK_SIZE))
-            pygame.draw.rect(self.display, BLUE2, pygame.Rect(pt.x+4, pt.y+4, 12, 12))
+            pygame.draw.rect(self.display, BLUE1, pygame.Rect(pt.x+4, pt.y+4, 12, 12))
             
         pygame.draw.rect(self.display, RED, pygame.Rect(self.food.x, self.food.y, BLOCK_SIZE, BLOCK_SIZE))
+        pygame.draw.rect(self.display, GREEN, pygame.Rect(self.obstacle.x, self.obstacle.y, BLOCK_SIZE, BLOCK_SIZE))
         
         text = font.render("Score: " + str(self.score), True, WHITE)
         self.display.blit(text, [0, 0])
