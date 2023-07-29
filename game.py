@@ -31,13 +31,14 @@ BLACK = (0,0,0)
 GREEN = (124,252,0)
 
 BLOCK_SIZE = 20
-SPEED = 200
+SPEED = 400
 
 class SnakeGameAI:
     
     def __init__(self, w=640, h=480):
-        self.w = w
-        self.h = h
+        self.speed = 60
+        self.w = w # specifies the width of the screen
+        self.h = h # specifies the height of the screen
         # init display
         self.display = pygame.display.set_mode((self.w, self.h))
         pygame.display.set_caption('Snake')
@@ -47,7 +48,7 @@ class SnakeGameAI:
     def reset(self):
         # init game state
         self.direction = Direction.RIGHT
-        
+
         self.head = Point(self.w/2, self.h/2)
         self.snake = [self.head, 
                       Point(self.head.x-BLOCK_SIZE, self.head.y)]
@@ -86,14 +87,13 @@ class SnakeGameAI:
         
         # 3. check if game over
         reward=0
-        game_over = False
+        game_over=False
+        
         if self.is_collision():
-            print('...collided...')
             game_over = True
             reward = -10
             return reward, game_over, self.score
         if self.frame_iteration > 60 * len(self.snake):
-            print('...frames exceeded...')
             game_over = True
             reward = -10
             return reward, game_over, self.score
@@ -111,7 +111,7 @@ class SnakeGameAI:
         
         # 5. update ui and clock
         self._update_ui()
-        self.clock.tick(SPEED)
+        self.clock.tick(self.speed)
         # 6. return game over and score
         return reward, game_over, self.score
     
@@ -128,6 +128,9 @@ class SnakeGameAI:
             return True
         
         return False
+    
+    def reduce_speed(self):
+        self.speed=75
         
     def _update_ui(self):
         self.display.fill(BLACK)

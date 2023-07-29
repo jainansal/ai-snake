@@ -11,13 +11,12 @@ BATCH_SIZE = 1000
 LR = 0.001
 
 class Agent:
-    
     def __init__(self):
         self.n_games=0
         self.epsilon=0 # control randomness
         self.gamma=0.9 # discount rate
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
-        self.model = Linear_QNet(11,256,3)
+        self.model = Linear_QNet(16,256,3)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
         # todo: model, trainer
@@ -25,35 +24,70 @@ class Agent:
 
     def get_state(self, game):
         head=game.snake[0]
+
         point_l = Point(head.x-20, head.y)
-        point_r = Point(head.x + 20, head.y)
+        point_r = Point(head.x+20, head.y)
         point_u = Point(head.x, head.y-20)
         point_d = Point(head.x, head.y+20)
-
+        point_ul = Point(head.x-20, head.y-20)
+        point_ur = Point(head.x+20, head.y-20)
+        point_dl = Point(head.x-20, head.y+20)
+        point_dr = Point(head.x+20, head.y+20)
+        
         dir_l = game.direction == Direction.LEFT
         dir_r = game.direction == Direction.RIGHT
         dir_u = game.direction == Direction.UP
         dir_d = game.direction == Direction.DOWN
 
-        state = [
-            # Danger straight
+        state = [# Danger straight
             (dir_r and game.is_collision(point_r)) or
             (dir_l and game.is_collision(point_l)) or
             (dir_u and game.is_collision(point_u)) or
             (dir_d and game.is_collision(point_d)),
 
-            # Danger right
+            # Danger straight clockwise diagonal
+            (dir_r and game.is_collision(point_dr)) or
+            (dir_l and game.is_collision(point_ul)) or
+            (dir_u and game.is_collision(point_ur)) or
+            (dir_d and game.is_collision(point_dl)),
+            
+            # Danger clockwise
             (dir_u and game.is_collision(point_r)) or
             (dir_d and game.is_collision(point_l)) or
             (dir_l and game.is_collision(point_u)) or
             (dir_r and game.is_collision(point_d)),
 
-            # Danger right
+            # Danger clockwise backward diagonal
+            (dir_u and game.is_collision(point_dr)) or
+            (dir_d and game.is_collision(point_ul)) or
+            (dir_l and game.is_collision(point_ur)) or
+            (dir_r and game.is_collision(point_dl)),
+
+            # Danger backward
+            (dir_u and game.is_collision(point_d)) or
+            (dir_d and game.is_collision(point_u)) or
+            (dir_l and game.is_collision(point_r)) or
+            (dir_r and game.is_collision(point_l)),
+
+            # Danger backward clockwise diagonal
+            (dir_u and game.is_collision(point_dl)) or
+            (dir_d and game.is_collision(point_ur)) or
+            (dir_l and game.is_collision(point_dr)) or
+            (dir_r and game.is_collision(point_ul)),
+            
+            # Danger anti-clockwise
             (dir_d and game.is_collision(point_r)) or
             (dir_u and game.is_collision(point_l)) or
             (dir_r and game.is_collision(point_u)) or
             (dir_l and game.is_collision(point_d)),
-
+            
+            # Danger anti-clockwise straight diagonal
+            (dir_u and game.is_collision(point_ul)) or
+            (dir_d and game.is_collision(point_dr)) or
+            (dir_l and game.is_collision(point_dl)) or
+            (dir_r and game.is_collision(point_ur))]
+        
+        other_states = [
             # Move direction
             dir_l,
             dir_r,
@@ -66,6 +100,10 @@ class Agent:
             game.food.y < game.head.y,
             game.food.y > game.head.y
         ]
+
+        state.extend(other_states)
+
+        # print(state)
         
         return np.array(state, dtype=int)
     
